@@ -1,0 +1,33 @@
+# ビルド時のパス匿名化。
+# --remap-path-prefix でバイナリに埋め込まれる panic メッセージ用の
+# ソースファイルパスから、実行環境固有のディレクトリ名を消す。
+# 埋め込み例: `C:\Users\<username>\.cargo\registry\src\...`
+#   → `/cargo/registry/src/...` に置換。
+# これによりビルド者のユーザー名や作業ディレクトリが配布バイナリに残らない。
+
+# このリポジトリ内の rustflags は、公開バイナリからユーザー名や作業パスを
+# 消すための一般的な remap のみ。ビルド者固有のパス (C:\Users\<username> や
+# 作業ディレクトリ) を隠したい場合は、コマンドラインで RUSTFLAGS を追加する:
+#
+#   Windows PowerShell:
+#     $env:RUSTFLAGS = "--remap-path-prefix=$env:USERPROFILE=/home/user"
+#     cargo build --release
+#
+#   bash:
+#     RUSTFLAGS="--remap-path-prefix=$HOME=/home/user" cargo build --release
+#
+# 注: RUSTFLAGS 環境変数は config.toml の rustflags を上書きするため、
+# 下記の内容も含めて再指定してください。
+
+[target.'cfg(windows)']
+rustflags = [
+    # 一般的な cargo registry 位置 (config で直接ユーザー名を持たないよう
+    # 汎用の Users 直下だけ remap。username 部分の匿名化は上記の env で)
+    "--remap-path-prefix=C:\\Users=/home",
+]
+
+[target.'cfg(unix)']
+rustflags = [
+    "--remap-path-prefix=/home=/home",
+    "--remap-path-prefix=/root=/home",
+]
